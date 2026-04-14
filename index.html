@@ -26,6 +26,7 @@
             overflow: hidden; 
         }
 
+        /* --- LETREIRO --- */
         .marquee-wrapper {
             background: #000; border-bottom: 2px solid var(--primary); padding: 10px 0; 
             overflow: hidden; white-space: nowrap; flex-shrink: 0;
@@ -36,6 +37,7 @@
         }
         @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
+        /* --- LAYOUT PRINCIPAL --- */
         .app-body { display: flex; flex: 1; overflow: hidden; }
         .sidebar-left { width: 280px; background: #000; display: flex; flex-direction: column; border-right: 1px solid #222; }
         .sidebar-right { width: 320px; background: #000; display: flex; flex-direction: column; border-left: 1px solid #222; }
@@ -50,6 +52,7 @@
         .radio-item:hover { background: #1a1a1a; border-color: #333; }
         .radio-item.active { border: 1px solid var(--primary); background: #151515; }
 
+        /* --- CHAT --- */
         #chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
         .msg { background: #111; padding: 10px; border-radius: 8px; border-left: 3px solid var(--primary); word-wrap: break-word; animation: fadeIn 0.3s ease; }
@@ -59,7 +62,9 @@
         .chat-input-area { padding: 10px; background: #0a0a0a; border-top: 1px solid #222; }
         .chat-input-area input { width: 100%; background: #181818; border: 1px solid #333; padding: 12px; color: white; border-radius: 5px; outline: none; margin-bottom: 8px; }
         .chat-input-area button { width: 100%; background: var(--primary); border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; color: #000; transition: 0.2s; }
+        .chat-input-area button:active { transform: scale(0.98); }
 
+        /* --- PLAYER --- */
         .main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at center, #111 0%, #000 100%); position: relative; padding: 20px; }
         .album-art { width: 200px; height: 200px; background: #181818; border-radius: 50%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 4rem; border: 6px solid #222; transition: 0.5s; }
         .playing .album-art { border-color: var(--primary); animation: rotateDisk 10s linear infinite; box-shadow: 0 0 30px var(--primary-glow); }
@@ -95,11 +100,13 @@
 
         <main class="main" id="playerMain">
             <div class="online-badge">OUVINTES: <span id="peer-count">0</span></div>
+            
             <div class="album-art" id="art">📻</div>
             <div class="player-display" style="text-align: center;">
                 <h2 id="current-name" style="font-size: 1.4rem; margin-bottom: 5px;">Predrada Live</h2>
                 <p id="current-status" style="color: var(--primary); font-size: 0.7rem; margin-bottom: 20px;">Selecione uma rádio</p>
             </div>
+
             <div class="volume-container">
                 <span>🔈</span>
                 <input type="range" id="volumeSlider" min="0" max="100" value="10">
@@ -125,6 +132,7 @@
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO FIREBASE ---
         const firebaseConfig = {
             databaseURL: "https://radio-86ca5-default-rtdb.firebaseio.com/" 
         };
@@ -133,13 +141,7 @@
         const chatRef = db.ref("mensagens");
         const conexoesRef = db.ref("conexoes");
 
-        // --- SISTEMA DE LIMPEZA AO SAIR ---
-        // Criamos uma referência única para as mensagens deste usuário nesta sessão
-        const minhaSessaoMsgsRef = chatRef.push(); 
-        // Quando o usuário desconectar, as mensagens que ele enviou nesta sessão somem
-        minhaSessaoMsgsRef.onDisconnect().remove();
-
-        // --- CONTADOR DE OUVINTES ---
+        // --- 1. SISTEMA DE OUVINTES ONLINE ---
         const meuStatusRef = conexoesRef.push(); 
         db.ref(".info/connected").on("value", (snapshot) => {
             if (snapshot.val() === true) {
@@ -148,7 +150,33 @@
             }
         });
         conexoesRef.on("value", (snapshot) => {
-            document.getElementById('peer-count').innerText = snapshot.numChildren();
+            const totalOnline = snapshot.numChildren();
+            document.getElementById('peer-count').innerText = totalOnline;
+        });
+
+        // --- 2. SISTEMA DE LIMPEZA DIÁRIA AUTOMÁTICA ---
+        function verificarLimpezaDiaria() {
+            const hoje = new Date().toLocaleDateString();
+            const ultimaLimpeza = localStorage.getItem('last_clear');
+            if (ultimaLimpeza !== hoje) {
+                chatRef.remove().then(() => {
+                    localStorage.setItem('last_clear', hoje);
+                    enviarSistema("🧹 Chat reiniciado para o novo dia!");
+                });
+            }
+        }
+        verificarLimpezaDiaria();
+
+        // --- CONTROLES DE ÁUDIO ---
+        const audioPlayer = document.getElementById('audioPlayer');
+        const volSlider = document.getElementById('volumeSlider');
+        const volValue = document.getElementById('volValue');
+
+        audioPlayer.volume = 0.1;
+        volSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            audioPlayer.volume = val / 100;
+            volValue.textContent = val + "%";
         });
 
         // --- LÓGICA DO CHAT ---
@@ -161,15 +189,14 @@
             meuNome = nome;
             document.getElementById('login-area').style.display = 'none';
             document.getElementById('msg-area').style.display = 'block';
+            enviarSistema(meuNome + " entrou na live! 🎧");
         }
 
         function enviarMensagem() {
             const input = document.getElementById('chatInput');
             const texto = input.value.trim();
             if(!texto) return;
-
-            // Salvamos a mensagem DENTRO da pasta da sessão deste usuário
-            minhaSessaoMsgsRef.push({
+            chatRef.push({
                 usuario: meuNome,
                 texto: texto,
                 timestamp: Date.now()
@@ -177,48 +204,47 @@
             input.value = "";
         }
 
-        // Para exibir as mensagens, precisamos ouvir todas as "pastas" de usuários
-        chatRef.on("child_added", (snapshotSessao) => {
-            snapshotSessao.ref.on("child_added", (snapshotMsg) => {
-                const data = snapshotMsg.val();
-                exibirMensagem(data, snapshotMsg.key);
-            });
-            
-            // Quando uma pasta de sessão é removida (usuário saiu), removemos as msgs da tela
-            snapshotSessao.ref.on("child_removed", (snapshotMsg) => {
-                const elemento = document.getElementById("msg-" + snapshotMsg.key);
-                if(elemento) elemento.remove();
-            });
-        });
+        function enviarSistema(txt) {
+            chatRef.push({ usuario: "SISTEMA", texto: txt, timestamp: Date.now() });
+        }
 
-        // Se o usuário sair, o Firebase avisa e a gente limpa da tela dos outros
-        chatRef.on("child_removed", (snapshotSessao) => {
-             // As mensagens somem automaticamente pois o child_removed da sessão limpa tudo
-             document.getElementById('chat-messages').innerHTML = ""; // Limpeza bruta opcional
-             // O ideal é recarregar as mensagens ativas, mas o remove() do Firebase já cuida do banco
-        });
-
-        function exibirMensagem(data, id) {
+        chatRef.limitToLast(30).on("child_added", (snapshot) => {
+            const data = snapshot.val();
             const box = document.getElementById('chat-messages');
             const div = document.createElement('div');
             div.className = 'msg';
-            div.id = "msg-" + id;
-            div.innerHTML = `<b>${data.usuario}</b> ${data.texto}`;
+            if(data.usuario === "SISTEMA") {
+                div.style.borderLeftColor = "#444";
+                div.style.background = "#0a0a0a";
+                div.innerHTML = `<small style="color:#777; font-style: italic;">${data.texto}</small>`;
+            } else {
+                div.innerHTML = `<b>${data.usuario}</b> ${data.texto}`;
+            }
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
-        }
-
-        // --- CONTROLES DE ÁUDIO & RÁDIOS (Mantidos iguais) ---
-        const audioPlayer = document.getElementById('audioPlayer');
-        const volSlider = document.getElementById('volumeSlider');
-        const volValue = document.getElementById('volValue');
-        audioPlayer.volume = 0.1;
-        volSlider.addEventListener('input', (e) => {
-            audioPlayer.volume = e.target.value / 100;
-            volValue.textContent = e.target.value + "%";
         });
 
-        const minhasRadios = [
+        document.getElementById('userName').addEventListener('keypress', (e) => e.key === 'Enter' && entrarNoChat());
+        document.getElementById('chatInput').addEventListener('keypress', (e) => e.key === 'Enter' && enviarMensagem());
+
+        // --- SALVES ---
+        const URL_SALVES = "https://api.npoint.io/25c904206a33689d05f1";
+        async function carregarSalves() {
+            try {
+                const response = await fetch(URL_SALVES, { cache: "no-cache" });
+                const dados = await response.json();
+                const display = document.getElementById('marqueeSalves');
+                let lista = Array.isArray(dados) ? dados : Object.values(dados).flat();
+                if (lista.length > 0) {
+                    display.innerHTML = lista.map(n => `<span style="margin-right:60px; border:1px solid var(--primary); padding:4px 18px; border-radius:50px; background: rgba(29,185,84,0.05)">📢 SALVE: ${n}</span>`).join("");
+                }
+            } catch (e) { console.error("Erro nos salves"); }
+        }
+        setInterval(carregarSalves, 15000);
+        carregarSalves();
+
+        // --- RÁDIOS ---
+       const minhasRadios = [
             { name: "Jovem Pan", url: "https://streaming.ntelecom.com.br:7524/stream" },
             { name: "Jovem Pan FM", url: "https://radio02.zas.media/proxy/jovempanitajai/stream" },
             { name: "Jovem Pan MPB", url: "https://stream.zeno.fm/mcypvxlpz4ouv" },
@@ -244,17 +270,27 @@
             { name: "RÁDIO PARÁ FM", url: "https://stm12.xcast.com.br:11014/stream" },
             { name: "Radio ONE Brasil", url: "https://streaming.conecta-la.com/radio-one-brasil.mp3" }
         ];
+
         function renderList() {
             const list = document.getElementById('radioList');
             minhasRadios.forEach((radio) => {
                 const li = document.createElement('li');
                 li.className = 'radio-item';
-                li.innerHTML = `<b>${radio.name}</b>`;
+                li.innerHTML = `<div style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#000; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.75rem;">${radio.name[0]}</div><b>${radio.name}</b>`;
                 li.onclick = () => {
+                    document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('active'));
+                    li.classList.add('active');
+                    document.getElementById('playerMain').classList.remove('playing');
                     document.getElementById('current-name').textContent = radio.name;
+                    document.getElementById('current-status').textContent = "SINTONIZANDO...";
                     audioPlayer.src = radio.url;
-                    audioPlayer.play();
-                    document.getElementById('playerMain').classList.add('playing');
+                    audioPlayer.play().then(() => {
+                        document.getElementById('current-status').textContent = "• NO AR";
+                        document.getElementById('art').textContent = "💿";
+                        document.getElementById('playerMain').classList.add('playing');
+                    }).catch(err => {
+                        document.getElementById('current-status').textContent = "ERRO AO CARREGAR";
+                    });
                 };
                 list.appendChild(li);
             });
