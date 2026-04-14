@@ -198,46 +198,60 @@
 
     <script>
         // --- SEU LINK DO NPOINT.IO ---
-        const URL_SALVES = "https://api.npoint.io/25c904206a33689d05f1";
+        // --- SEU LINK DO NPOINT.IO ---
+const URL_SALVES = "https://api.npoint.io/25c904206a33689d05f1";
 
-        const audioPlayer = document.getElementById('audioPlayer');
-        const volSlider = document.getElementById('volumeSlider');
-        const volValue = document.getElementById('volValue');
+const audioPlayer = document.getElementById('audioPlayer');
+const volSlider = document.getElementById('volumeSlider');
+const volValue = document.getElementById('volValue');
 
-        // Configuração de Volume Inicial (10%)
-        audioPlayer.volume = 0.1;
-        volSlider.addEventListener('input', (e) => {
-            const val = e.target.value;
-            audioPlayer.volume = val / 100;
-            volValue.textContent = val + "%";
-        });
+// Configuração de Volume Inicial (10%)
+audioPlayer.volume = 0.1;
+volSlider.addEventListener('input', (e) => {
+    const val = e.target.value;
+    audioPlayer.volume = val / 100;
+    volValue.textContent = val + "%";
+});
 
-        // FUNÇÃO DE SALVES EM TEMPO REAL
-        async function carregarSalves() {
-            try {
-                const response = await fetch(URL_SALVES);
-                if (!response.ok) throw new Error();
-                
-                // O npoint retorna um objeto ou array JSON
-                const listaNomes = await response.json();
-                
-                // Se o seu npoint tiver uma lista de nomes ["nome1", "nome2"]
-                if (Array.isArray(listaNomes) && listaNomes.length > 0) {
-                    const display = document.getElementById('marqueeSalves');
-                    const novoConteudo = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
-                    
-                    if (display.innerHTML !== novoConteudo) {
-                        display.innerHTML = novoConteudo;
-                    }
-                }
-            } catch (e) { console.warn("Erro ao buscar salves..."); }
+// FUNÇÃO DE SALVES CORRIGIDA
+async function carregarSalves() {
+    try {
+        // 'no-cache' força o npoint a entregar o dado novo
+        const response = await fetch(URL_SALVES, { cache: "no-cache" });
+        if (!response.ok) throw new Error("Erro na rede");
+        
+        const dados = await response.json();
+        const display = document.getElementById('marqueeSalves');
+        let listaNomes = [];
+
+        // Verifica se o que veio do npoint é uma lista ou um texto
+        if (Array.isArray(dados)) {
+            listaNomes = dados;
+        } else if (typeof dados === 'object') {
+            // Caso você tenha salvo como {"salves": ["nome1"]}
+            listaNomes = Object.values(dados).flat();
         }
 
-        // Verifica a cada 3 segundos
-        setInterval(carregarSalves, 3000);
-        carregarSalves();
+        if (listaNomes.length > 0) {
+            const novoConteudo = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
+            
+            // Só mexe no HTML se mudar o texto, para não travar a animação
+            if (display.innerHTML !== novoConteudo) {
+                display.innerHTML = novoConteudo;
+                console.log("Salves atualizados!");
+            }
+        }
+    } catch (e) { 
+        console.error("Falha ao buscar dados:", e); 
+    }
+}
 
-        const minhasRadios = [
+// Verifica a cada 3 segundos
+setInterval(carregarSalves, 3000);
+carregarSalves();
+
+// --- LISTA DE RÁDIOS ---
+const minhasRadios = [
             { name: "Jovem Pan", url: "https://streaming.ntelecom.com.br:7524/stream" },
             { name: "Jovem Pan FM", url: "https://radio02.zas.media/proxy/jovempanitajai/stream" },
             { name: "Jovem Pan MPB", url: "https://stream.zeno.fm/mcypvxlpz4ouv" },
@@ -264,37 +278,37 @@
             { name: "Radio ONE Brasil", url: "https://streaming.conecta-la.com/radio-one-brasil.mp3" }
         ];
 
-        function renderList() {
-            const list = document.getElementById('radioList');
-            minhasRadios.forEach((radio) => {
-                const li = document.createElement('li');
-                li.className = 'radio-item';
-                li.innerHTML = `<div class="radio-icon">${radio.name[0]}</div><div><b>${radio.name}</b><br><small>AO VIVO</small></div>`;
-                li.onclick = () => playRadio(radio, li);
-                list.appendChild(li);
-            });
-        }
+function renderList() {
+    const list = document.getElementById('radioList');
+    minhasRadios.forEach((radio) => {
+        const li = document.createElement('li');
+        li.className = 'radio-item';
+        li.innerHTML = `<div class="radio-icon">${radio.name[0]}</div><div><b>${radio.name}</b><br><small>AO VIVO</small></div>`;
+        li.onclick = () => playRadio(radio, li);
+        list.appendChild(li);
+    });
+}
 
-        function playRadio(radio, li) {
-            document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('active'));
-            li.classList.add('active');
-            const playerMain = document.getElementById('playerMain');
-            playerMain.classList.remove('playing');
-            document.getElementById('current-name').textContent = radio.name;
-            document.getElementById('current-status').textContent = "CONECTANDO...";
-            
-            audioPlayer.src = radio.url;
-            audioPlayer.play().then(() => {
-                document.getElementById('current-status').textContent = "• TOCANDO AGORA";
-                document.getElementById('art').textContent = "💿";
-                playerMain.classList.add('playing');
-            }).catch(() => {
-                document.getElementById('current-status').textContent = "OFFLINE";
-                document.getElementById('art').textContent = "❌";
-            });
-        }
+function playRadio(radio, li) {
+    document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('active'));
+    li.classList.add('active');
+    const playerMain = document.getElementById('playerMain');
+    playerMain.classList.remove('playing');
+    document.getElementById('current-name').textContent = radio.name;
+    document.getElementById('current-status').textContent = "CONECTANDO...";
+    
+    audioPlayer.src = radio.url;
+    audioPlayer.play().then(() => {
+        document.getElementById('current-status').textContent = "• TOCANDO AGORA";
+        document.getElementById('art').textContent = "💿";
+        playerMain.classList.add('playing');
+    }).catch(() => {
+        document.getElementById('current-status').textContent = "OFFLINE";
+        document.getElementById('art').textContent = "❌";
+    });
+}
 
-        renderList();
+renderList();
     </script>
 </body>
 </html>
