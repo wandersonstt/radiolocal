@@ -38,12 +38,10 @@
         /* --- LAYOUT --- */
         .app-body { display: flex; flex: 1; overflow: hidden; }
         
-        /* Sidebar Esquerda: Rádios */
         .sidebar-left { 
             width: 280px; background-color: #000; display: flex; flex-direction: column; border-right: 1px solid #222;
         }
         
-        /* Sidebar Direita: Chat */
         .sidebar-right { 
             width: 300px; background-color: #000; display: flex; flex-direction: column; border-left: 1px solid #222;
         }
@@ -77,11 +75,12 @@
 
         .volume-container { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 50px; width: 280px; border: 1px solid #222; }
         #volumeSlider { flex: 1; accent-color: var(--primary); cursor: pointer; }
+        #volValue { font-size: 0.8rem; width: 35px; }
 
         .online-badge { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary); font-size: 0.7rem; color: var(--primary); }
 
         @media (max-width: 1000px) {
-            .sidebar-right { display: none; } /* Esconde chat em telas pequenas */
+            .sidebar-right { display: none; }
         }
     </style>
 </head>
@@ -108,7 +107,7 @@
             <div class="volume-container">
                 <span style="font-size: 1rem;">🔈</span>
                 <input type="range" id="volumeSlider" min="0" max="100" value="10">
-                <span id="volValue" style="font-size: 0.8rem;">10%</span>
+                <span id="volValue">10%</span>
             </div>
             <audio id="audioPlayer" autoplay></audio>
         </main>
@@ -148,7 +147,15 @@
         let peer;
         let connections = [];
         let myName = "";
-        const ROOM_ID = "predrada-premium-room-2026"; // ID fixo para os peers se acharem
+
+        // Atalhos de teclado para o Enter
+        document.getElementById('userName').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') conectarAoChat();
+        });
+
+        document.getElementById('chatInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') enviarMensagem();
+        });
 
         function conectarAoChat() {
             const input = document.getElementById('userName');
@@ -158,13 +165,9 @@
             document.getElementById('login-area').style.display = 'none';
             document.getElementById('msg-area').style.display = 'block';
 
-            // Inicializa o Peer
             peer = new Peer(); 
 
             peer.on('open', (id) => {
-                console.log("Meu ID Peer:", id);
-                // No P2P puro, tentamos conectar a um ID fixo ou lista de ativos
-                // Aqui simulamos a entrada na rede
                 adicionarMensagem("Você", "entrou no chat!");
             });
 
@@ -190,7 +193,6 @@
 
             adicionarMensagem("Você", texto);
             
-            // Envia para todos os conectados
             connections.forEach(conn => {
                 if(conn.open) conn.send({ user: myName, msg: texto });
             });
@@ -228,7 +230,7 @@
         carregarSalves();
 
         // --- RADIOS ---
-       const minhasRadios = [
+        const minhasRadios = [
             { name: "Jovem Pan", url: "https://streaming.ntelecom.com.br:7524/stream" },
             { name: "Jovem Pan FM", url: "https://radio02.zas.media/proxy/jovempanitajai/stream" },
             { name: "Jovem Pan MPB", url: "https://stream.zeno.fm/mcypvxlpz4ouv" },
