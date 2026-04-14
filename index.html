@@ -102,41 +102,37 @@
 
         async function carregarSalves() {
             try {
+                // O t= garante que o GitHub não entregue uma versão velha do arquivo
                 const cacheBuster = `?t=${Date.now()}`;
                 const response = await fetch(URL_SALVES + cacheBuster);
                 
                 if (!response.ok) throw new Error("Falha ao buscar arquivo");
                 
                 const data = await response.text();
+                
+                // Limpa os nomes e remove linhas vazias
                 const listaNomes = data.split('\n')
                                       .map(n => n.trim())
                                       .filter(n => n !== "");
                 
                 if (listaNomes.length > 0) {
-                    const htmlSalves = listaNomes.map(nome => `<span class="salve-tag">📢 ${nome}</span>`).join("");
-                    
-                    // Lógica inteligente: 
-                    // Se tiver pouco texto, a gente só exibe uma vez ou coloca um espaço gigante.
-                    // Para o letreiro fluir bem, precisamos de repetição, mas com separação.
                     const display = document.getElementById('marqueeSalves');
                     
-                    if (listaNomes.length === 1) {
-                        // Se for só um nome, exibe apenas uma vez para não repetir "OLA OLA"
-                        display.innerHTML = htmlSalves;
-                        display.style.animation = "none"; // Para o nome e fica parado ou...
-                        display.style.paddingLeft = "0";
-                        display.style.textAlign = "center";
-                        display.style.width = "100%";
-                    } else {
-                        // Se tiver vários, volta a animação de letreiro
-                        display.innerHTML = htmlSalves + htmlSalves;
-                        display.style.animation = "scroll-left 30s linear infinite";
-                        display.style.textAlign = "left";
-                        display.style.width = "auto";
-                    }
+                    // Criamos as tags de salve
+                    const htmlSalves = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
+                    
+                    // ESPAÇO INTELIGENTE:
+                    // Se houver poucos nomes, adicionamos um espaço bem grande (vários &nbsp;)
+                    // para que o próximo nome demore a aparecer, ficando elegante.
+                    const separador = "&nbsp;".repeat(80); 
+                    
+                    display.innerHTML = htmlSalves + separador + htmlSalves + separador;
+                    
+                    // Garante que a animação está ativa
+                    display.style.animation = "scroll-left 25s linear infinite";
                 }
             } catch (error) {
-                console.warn("Erro ao carregar:", error);
+                console.warn("GitHub ainda processando alteração...");
             }
         }
 
