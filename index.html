@@ -52,6 +52,16 @@
             100% { transform: translateX(-100%); } 
         }
 
+        .salve-tag {
+            background: rgba(29, 185, 84, 0.15);
+            padding: 5px 18px;
+            border-radius: 50px;
+            margin-right: 40px;
+            border: 1px solid var(--primary);
+            display: inline-block;
+            box-shadow: inset 0 0 10px rgba(29, 185, 84, 0.2);
+        }
+
         /* --- LAYOUT --- */
         .app-body { display: flex; flex: 1; overflow: hidden; }
         
@@ -96,7 +106,7 @@
             display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; 
         }
 
-        /* --- PLAYER INTERESSANTE --- */
+        /* --- PLAYER --- */
         .main { 
             flex: 1; 
             display: flex; 
@@ -106,28 +116,6 @@
             background: radial-gradient(circle at center, #111 0%, #000 100%);
         }
 
-        /* Equalizador Animado */
-        .visualizer {
-            display: flex;
-            align-items: flex-end;
-            gap: 4px;
-            height: 40px;
-            margin-bottom: 20px;
-            opacity: 0;
-            transition: 0.5s;
-        }
-
-        .playing .visualizer { opacity: 1; }
-
-        .bar { width: 5px; background: var(--primary); border-radius: 2px; animation: wave 1s infinite alternate; }
-        .bar:nth-child(2) { animation-duration: 0.7s; }
-        .bar:nth-child(3) { animation-duration: 0.9s; }
-        .bar:nth-child(4) { animation-duration: 0.6s; }
-        .bar:nth-child(5) { animation-duration: 1.1s; }
-
-        @keyframes wave { from { height: 5px; } to { height: 35px; } }
-
-        /* Estilo Disco de Vinil */
         .album-art { 
             width: 280px; height: 280px; 
             background: #181818; 
@@ -137,7 +125,6 @@
             font-size: 6rem; 
             border: 10px solid #222;
             box-shadow: 0 0 50px rgba(0,0,0,1);
-            position: relative;
             transition: 0.5s;
         }
 
@@ -152,7 +139,7 @@
         .player-display h2 { font-size: 2.2rem; margin-bottom: 5px; font-weight: 800; }
         .player-display p { color: var(--primary); letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 35px; }
 
-        /* Custom Volume */
+        /* Volume Custom */
         .volume-container {
             display: flex;
             align-items: center;
@@ -168,12 +155,11 @@
             flex: 1;
             accent-color: var(--primary);
             cursor: pointer;
-            height: 6px;
         }
 
         #volValue { font-size: 0.85rem; font-weight: bold; width: 40px; color: var(--primary); text-align: right;}
 
-        audio { display: none; } /* Escondido para usar nossa UI */
+        audio { display: none; }
 
         @media (max-width: 768px) {
             .app-body { flex-direction: column; }
@@ -185,7 +171,7 @@
 <body>
 
     <div class="marquee-wrapper">
-        <div class="marquee-content" id="marqueeSalves">CONECTANDO AO SISTEMA DE SALVES...</div>
+        <div class="marquee-content" id="marqueeSalves">SINTONIZANDO SALVES...</div>
     </div>
 
     <div class="app-body">
@@ -195,13 +181,7 @@
         </aside>
 
         <main class="main" id="playerMain">
-            <div class="visualizer">
-                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                <div class="bar"></div><div class="bar"></div>
-            </div>
-
             <div class="album-art" id="art">📻</div>
-
             <div class="player-display" style="text-align: center;">
                 <h2 id="current-name">Predrada Live</h2>
                 <p id="current-status">Escolha uma estação</p>
@@ -212,39 +192,52 @@
                 <input type="range" id="volumeSlider" min="0" max="100" value="10">
                 <span id="volValue">10%</span>
             </div>
-
             <audio id="audioPlayer" autoplay></audio>
         </main>
     </div>
 
     <script>
-        const URL_SALVES = "https://raw.githubusercontent.com/wandersonstt/radiolocal/refs/heads/main/salves.txt";
+        // --- SEU LINK DO NPOINT.IO ---
+        const URL_SALVES = "https://api.npoint.io/25c904206a33689d05f1";
+
         const audioPlayer = document.getElementById('audioPlayer');
         const volSlider = document.getElementById('volumeSlider');
         const volValue = document.getElementById('volValue');
 
-        // --- INICIAR COM VOLUME EM 10% ---
+        // Configuração de Volume Inicial (10%)
         audioPlayer.volume = 0.1;
-
         volSlider.addEventListener('input', (e) => {
             const val = e.target.value;
             audioPlayer.volume = val / 100;
             volValue.textContent = val + "%";
         });
 
+        // FUNÇÃO DE SALVES EM TEMPO REAL
         async function carregarSalves() {
             try {
-                const response = await fetch(`${URL_SALVES}?t=${Date.now()}`);
-                const data = await response.text();
-                const nomes = data.split('\n').map(n => n.trim()).filter(n => n !== "");
-                if (nomes.length > 0) {
-                    document.getElementById('marqueeSalves').innerHTML = nomes.map(n => `<span> 📢 SALVE: ${n} </span>`).join("&nbsp;&nbsp;&nbsp;&nbsp;");
+                const response = await fetch(URL_SALVES);
+                if (!response.ok) throw new Error();
+                
+                // O npoint retorna um objeto ou array JSON
+                const listaNomes = await response.json();
+                
+                // Se o seu npoint tiver uma lista de nomes ["nome1", "nome2"]
+                if (Array.isArray(listaNomes) && listaNomes.length > 0) {
+                    const display = document.getElementById('marqueeSalves');
+                    const novoConteudo = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
+                    
+                    if (display.innerHTML !== novoConteudo) {
+                        display.innerHTML = novoConteudo;
+                    }
                 }
-            } catch (e) {}
+            } catch (e) { console.warn("Erro ao buscar salves..."); }
         }
-        setInterval(carregarSalves, 10000); carregarSalves();
 
-       const minhasRadios = [
+        // Verifica a cada 3 segundos
+        setInterval(carregarSalves, 3000);
+        carregarSalves();
+
+        const minhasRadios = [
             { name: "Jovem Pan", url: "https://streaming.ntelecom.com.br:7524/stream" },
             { name: "Jovem Pan FM", url: "https://radio02.zas.media/proxy/jovempanitajai/stream" },
             { name: "Jovem Pan MPB", url: "https://stream.zeno.fm/mcypvxlpz4ouv" },
@@ -285,7 +278,6 @@
         function playRadio(radio, li) {
             document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('active'));
             li.classList.add('active');
-            
             const playerMain = document.getElementById('playerMain');
             playerMain.classList.remove('playing');
             document.getElementById('current-name').textContent = radio.name;
@@ -297,7 +289,7 @@
                 document.getElementById('art').textContent = "💿";
                 playerMain.classList.add('playing');
             }).catch(() => {
-                document.getElementById('current-status').textContent = "STREAM OFFLINE";
+                document.getElementById('current-status').textContent = "OFFLINE";
                 document.getElementById('art').textContent = "❌";
             });
         }
