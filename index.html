@@ -113,7 +113,7 @@
                                       .filter(n => n !== "");
                 
                 if (listaNomes.length > 0) {
-                    const htmlSalves = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
+                    const htmlSalves = listaNomes.map(nome => `<span class="salve-tag">📢 ${nome}</span>`).join("");
                     
                     // Lógica inteligente: 
                     // Se tiver pouco texto, a gente só exibe uma vez ou coloca um espaço gigante.
