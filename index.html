@@ -16,12 +16,13 @@
             padding: 10px 0;
             overflow: hidden;
             white-space: nowrap;
+            z-index: 100;
         }
 
         .marquee-content {
             display: inline-block;
             padding-left: 100%;
-            animation: scroll-left 25s linear infinite;
+            animation: scroll-left 30s linear infinite;
             font-weight: bold;
             color: var(--primary);
             text-transform: uppercase;
@@ -36,16 +37,16 @@
 
         .salve-tag {
             background: rgba(29, 185, 84, 0.1);
-            padding: 4px 12px;
+            padding: 4px 15px;
             border-radius: 20px;
-            margin-right: 40px;
+            margin-right: 50px;
             border: 1px solid var(--primary);
+            display: inline-block;
         }
 
         /* --- ESTRUTURA PRINCIPAL --- */
         .app-body { display: flex; flex: 1; overflow: hidden; }
         
-        /* Sidebar */
         .sidebar { width: 320px; background-color: #000; display: flex; flex-direction: column; border-right: 1px solid #282828; }
         .header-list { padding: 20px; border-bottom: 1px solid #282828; text-align: center; }
         .header-list h2 { font-size: 1.2rem; color: var(--primary); }
@@ -57,7 +58,6 @@
         
         .radio-icon { width: 45px; height: 45px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: black; font-weight: bold; }
 
-        /* Main Player */
         .main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle, #1e1e1e 0%, #000 100%); }
         .player-display { text-align: center; width: 90%; max-width: 400px; }
         
@@ -73,7 +73,7 @@
 
     <div class="marquee-wrapper">
         <div class="marquee-content" id="marqueeSalves">
-            Conectando ao servidor de salves...
+            Buscando novos salves da galera...
         </div>
     </div>
 
@@ -102,24 +102,35 @@
 
         async function carregarSalves() {
             try {
-                // Adicionamos um número aleatório no final para evitar que o navegador use o cache antigo
-                const response = await fetch(`${URL_SALVES}?t=${new Date().getTime()}`);
+                // O segredo para atualizar sem F5: geramos um link único a cada busca (cache buster)
+                const cacheBuster = `?t=${Date.now()}`;
+                const response = await fetch(URL_SALVES + cacheBuster);
+                
+                if (!response.ok) throw new Error("Falha ao buscar arquivo");
+                
                 const data = await response.text();
                 
-                // Transforma o texto em tags bonitas
-                const listaNomes = data.split('\n').filter(nome => nome.trim() !== "");
-                const htmlSalves = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome.trim()}</span>`).join("");
+                // Filtra o texto para remover linhas vazias e criar as tags
+                const listaNomes = data.split('\n')
+                                      .map(n => n.trim())
+                                      .filter(n => n !== "");
                 
-                document.getElementById('marqueeSalves').innerHTML = htmlSalves + htmlSalves; // Duplicado para loop infinito
+                if (listaNomes.length > 0) {
+                    const htmlSalves = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
+                    // Inserimos duas vezes para o efeito de "loop infinito" ser suave
+                    document.getElementById('marqueeSalves').innerHTML = htmlSalves + htmlSalves;
+                }
             } catch (error) {
-                console.error("Erro ao carregar salves:", error);
-                document.getElementById('marqueeSalves').innerText = "Rádio Só Pedrada - Sintonize na melhor!";
+                console.warn("Aguardando atualização do GitHub...");
             }
         }
 
-        // Atualiza os salves a cada 30 segundos
+        // 1. Carrega assim que a página abre
         carregarSalves();
-        setInterval(carregarSalves, 30000);
+
+        // 2. Verifica se você mudou o arquivo no GitHub a cada 15 segundos
+        // Não precisa dar F5, ele troca o texto sozinho na tela!
+        setInterval(carregarSalves, 15000);
 
         // SUA LISTA DE RÁDIOS ORIGINAL
         const minhasRadios = [
@@ -156,7 +167,7 @@
         const art = document.getElementById('art');
 
         function renderList() {
-            minhasRadios.forEach((radio, index) => {
+            minhasRadios.forEach((radio) => {
                 const li = document.createElement('li');
                 li.className = 'radio-item';
                 li.innerHTML = `
@@ -166,10 +177,7 @@
                         <small style="color:#666">Ao Vivo</small>
                     </div>
                 `;
-
-                li.onclick = () => {
-                    playRadio(radio, li);
-                };
+                li.onclick = () => playRadio(radio, li);
                 radioList.appendChild(li);
             });
         }
