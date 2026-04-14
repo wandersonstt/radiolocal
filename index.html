@@ -236,7 +236,7 @@
                 const display = document.getElementById('marqueeSalves');
                 let lista = Array.isArray(dados) ? dados : Object.values(dados).flat();
                 if (lista.length > 0) {
-                    display.innerHTML = lista.map(n => `<span style="margin-right:60px; border:1px solid var(--primary); padding:4px 18px; border-radius:50px; background: rgba(29,185,84,0.05)">📢 SALVE: ${n}</span>`).join("");
+                    display.innerHTML = lista.map(n => `<span style="margin-right:60px; border:1px solid var(--primary); padding:4px 18px; border-radius:50px; background: rgba(29,185,84,0.05)">📢 ${n}</span>`).join("");
                 }
             } catch (e) { console.error("Erro nos salves"); }
         }
