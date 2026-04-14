@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SO PREDRADA | PREMIUM LIVE</title>
+    <title>SO PREDRADA | PREMIUM LIVE & CHAT</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { 
             --primary: #1db954; 
@@ -15,156 +16,72 @@
         
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
         
-        body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            overflow: hidden; 
-        }
+        body { background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         /* --- LETREIRO DINÂMICO --- */
         .marquee-wrapper {
-            background: #000;
-            border-bottom: 2px solid var(--primary);
-            box-shadow: 0 0 20px var(--primary-glow);
-            padding: 12px 0;
-            overflow: hidden;
-            white-space: nowrap;
-            z-index: 100;
+            background: #000; border-bottom: 2px solid var(--primary); box-shadow: 0 0 20px var(--primary-glow);
+            padding: 12px 0; overflow: hidden; white-space: nowrap; z-index: 100;
         }
-
         .marquee-content {
-            display: inline-block;
-            padding-left: 100%; 
-            animation: scroll-left 20s linear infinite;
-            font-weight: 800;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 0.85rem;
-            text-shadow: 0 0 8px var(--primary-glow);
+            display: inline-block; padding-left: 100%; animation: scroll-left 20s linear infinite;
+            font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;
+            font-size: 0.85rem; text-shadow: 0 0 8px var(--primary-glow);
         }
-
-        @keyframes scroll-left {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); } 
-        }
+        @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
         .salve-tag {
-            background: rgba(29, 185, 84, 0.15);
-            padding: 5px 18px;
-            border-radius: 50px;
-            margin-right: 40px;
-            border: 1px solid var(--primary);
-            display: inline-block;
-            box-shadow: inset 0 0 10px rgba(29, 185, 84, 0.2);
+            background: rgba(29, 185, 84, 0.15); padding: 5px 18px; border-radius: 50px;
+            margin-right: 40px; border: 1px solid var(--primary); display: inline-block;
         }
 
         /* --- LAYOUT --- */
         .app-body { display: flex; flex: 1; overflow: hidden; }
         
-        .sidebar { 
-            width: 320px; 
-            background-color: #000; 
-            display: flex; 
-            flex-direction: column; 
-            border-right: 1px solid #222;
+        /* Sidebar Esquerda: Rádios */
+        .sidebar-left { 
+            width: 280px; background-color: #000; display: flex; flex-direction: column; border-right: 1px solid #222;
         }
         
-        .header-list { padding: 25px; text-align: center; border-bottom: 1px solid #111; }
-        .header-list h2 { font-size: 1.2rem; color: var(--primary); letter-spacing: 2px; }
-
-        .radio-list { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 15px; 
-            list-style: none; 
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary) #000;
+        /* Sidebar Direita: Chat */
+        .sidebar-right { 
+            width: 300px; background-color: #000; display: flex; flex-direction: column; border-left: 1px solid #222;
         }
 
+        .header-section { padding: 15px; text-align: center; border-bottom: 1px solid #111; font-size: 0.9rem; color: var(--primary); font-weight: bold; }
+
+        .radio-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; }
         .radio-item { 
-            padding: 15px; 
-            margin-bottom: 8px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            background: #0f0f0f; 
-            transition: 0.3s;
-            border: 1px solid transparent;
+            padding: 12px; margin-bottom: 8px; border-radius: 10px; cursor: pointer; display: flex; 
+            align-items: center; gap: 10px; background: #0f0f0f; transition: 0.3s; font-size: 0.8rem;
         }
+        .radio-item:hover { background: #1a1a1a; }
+        .radio-item.active { border-color: var(--primary); background: #151515; border: 1px solid var(--primary); }
+        .radio-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
 
-        .radio-item:hover { background: #1a1a1a; transform: translateX(5px); }
-        .radio-item.active { border-color: var(--primary); background: #151515; }
+        /* --- CHAT P2P --- */
+        #chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; }
+        .msg { background: #111; padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--primary); }
+        .msg b { color: var(--primary); display: block; font-size: 0.7rem; }
         
-        .radio-icon { 
-            width: 40px; height: 40px; border-radius: 50%; background: var(--primary); 
-            display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; 
-        }
+        .chat-input-area { padding: 10px; background: #0a0a0a; border-top: 1px solid #222; }
+        .chat-input-area input { width: 100%; background: #181818; border: 1px solid #333; padding: 10px; color: white; border-radius: 5px; outline: none; margin-bottom: 5px; }
+        .chat-input-area button { width: 100%; background: var(--primary); border: none; padding: 8px; border-radius: 5px; font-weight: bold; cursor: pointer; }
 
-        /* --- PLAYER --- */
-        .main { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            background: radial-gradient(circle at center, #111 0%, #000 100%);
-        }
-
-        .album-art { 
-            width: 280px; height: 280px; 
-            background: #181818; 
-            border-radius: 50%; 
-            margin-bottom: 30px; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 6rem; 
-            border: 10px solid #222;
-            box-shadow: 0 0 50px rgba(0,0,0,1);
-            transition: 0.5s;
-        }
-
-        .playing .album-art { 
-            border-color: var(--primary); 
-            animation: rotateDisk 10s linear infinite;
-            box-shadow: 0 0 40px var(--primary-glow);
-        }
-
+        /* --- PLAYER CENTRAL --- */
+        .main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at center, #111 0%, #000 100%); position: relative; }
+        .album-art { width: 220px; height: 220px; background: #181818; border-radius: 50%; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; font-size: 5rem; border: 8px solid #222; transition: 0.5s; }
+        .playing .album-art { border-color: var(--primary); animation: rotateDisk 10s linear infinite; box-shadow: 0 0 40px var(--primary-glow); }
         @keyframes rotateDisk { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .player-display h2 { font-size: 2.2rem; margin-bottom: 5px; font-weight: 800; }
-        .player-display p { color: var(--primary); letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 35px; }
+        .volume-container { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 50px; width: 280px; border: 1px solid #222; }
+        #volumeSlider { flex: 1; accent-color: var(--primary); cursor: pointer; }
 
-        /* Volume Custom */
-        .volume-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: rgba(255,255,255,0.05);
-            padding: 12px 25px;
-            border-radius: 50px;
-            width: 320px;
-            border: 1px solid #222;
-        }
+        .online-badge { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary); font-size: 0.7rem; color: var(--primary); }
 
-        #volumeSlider {
-            flex: 1;
-            accent-color: var(--primary);
-            cursor: pointer;
-        }
-
-        #volValue { font-size: 0.85rem; font-weight: bold; width: 40px; color: var(--primary); text-align: right;}
-
-        audio { display: none; }
-
-        @media (max-width: 768px) {
-            .app-body { flex-direction: column; }
-            .sidebar { width: 100%; height: 35%; }
-            .album-art { width: 180px; height: 180px; font-size: 4rem; }
+        @media (max-width: 1000px) {
+            .sidebar-right { display: none; } /* Esconde chat em telas pequenas */
         }
     </style>
 </head>
@@ -175,83 +92,143 @@
     </div>
 
     <div class="app-body">
-        <aside class="sidebar">
-            <div class="header-list"><h2>STATIONS</h2></div>
+        <aside class="sidebar-left">
+            <div class="header-section">ESTAÇÕES</div>
             <ul class="radio-list" id="radioList"></ul>
         </aside>
 
         <main class="main" id="playerMain">
+            <div class="online-badge">OUVINTES: <span id="peer-count">1</span></div>
             <div class="album-art" id="art">📻</div>
             <div class="player-display" style="text-align: center;">
-                <h2 id="current-name">Predrada Live</h2>
-                <p id="current-status">Escolha uma estação</p>
+                <h2 id="current-name" style="font-size: 1.5rem; margin-bottom: 5px;">Predrada Live</h2>
+                <p id="current-status" style="color: var(--primary); font-size: 0.7rem; margin-bottom: 25px;">Selecione uma rádio</p>
             </div>
 
             <div class="volume-container">
-                <span style="font-size: 1.1rem;">🔈</span>
+                <span style="font-size: 1rem;">🔈</span>
                 <input type="range" id="volumeSlider" min="0" max="100" value="10">
-                <span id="volValue">10%</span>
+                <span id="volValue" style="font-size: 0.8rem;">10%</span>
             </div>
             <audio id="audioPlayer" autoplay></audio>
         </main>
+
+        <aside class="sidebar-right">
+            <div class="header-section">CHAT AO VIVO</div>
+            <div id="chat-container">
+                <div id="chat-messages">
+                    <div class="msg"><b>Sistema</b> Bem-vindo! Digite seu nome abaixo para conversar.</div>
+                </div>
+                <div class="chat-input-area" id="login-area">
+                    <input type="text" id="userName" placeholder="Seu apelido...">
+                    <button onclick="conectarAoChat()">ENTRAR NO CHAT</button>
+                </div>
+                <div class="chat-input-area" id="msg-area" style="display:none;">
+                    <input type="text" id="chatInput" placeholder="Sua mensagem...">
+                    <button onclick="enviarMensagem()">ENVIAR</button>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script>
-        // --- SEU LINK DO NPOINT.IO ---
-        // --- SEU LINK DO NPOINT.IO ---
-const URL_SALVES = "https://api.npoint.io/25c904206a33689d05f1";
+        const URL_SALVES = "https://api.npoint.io/25c904206a33689d05f1";
+        const audioPlayer = document.getElementById('audioPlayer');
+        const volSlider = document.getElementById('volumeSlider');
+        const volValue = document.getElementById('volValue');
 
-const audioPlayer = document.getElementById('audioPlayer');
-const volSlider = document.getElementById('volumeSlider');
-const volValue = document.getElementById('volValue');
+        audioPlayer.volume = 0.1;
+        volSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            audioPlayer.volume = val / 100;
+            volValue.textContent = val + "%";
+        });
 
-// Configuração de Volume Inicial (10%)
-audioPlayer.volume = 0.1;
-volSlider.addEventListener('input', (e) => {
-    const val = e.target.value;
-    audioPlayer.volume = val / 100;
-    volValue.textContent = val + "%";
-});
+        // --- SISTEMA DE CHAT P2P (PeerJS) ---
+        let peer;
+        let connections = [];
+        let myName = "";
+        const ROOM_ID = "predrada-premium-room-2026"; // ID fixo para os peers se acharem
 
-// FUNÇÃO DE SALVES CORRIGIDA
-async function carregarSalves() {
-    try {
-        // 'no-cache' força o npoint a entregar o dado novo
-        const response = await fetch(URL_SALVES, { cache: "no-cache" });
-        if (!response.ok) throw new Error("Erro na rede");
-        
-        const dados = await response.json();
-        const display = document.getElementById('marqueeSalves');
-        let listaNomes = [];
-
-        // Verifica se o que veio do npoint é uma lista ou um texto
-        if (Array.isArray(dados)) {
-            listaNomes = dados;
-        } else if (typeof dados === 'object') {
-            // Caso você tenha salvo como {"salves": ["nome1"]}
-            listaNomes = Object.values(dados).flat();
-        }
-
-        if (listaNomes.length > 0) {
-            const novoConteudo = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
+        function conectarAoChat() {
+            const input = document.getElementById('userName');
+            if(!input.value) return alert("Digite um nome!");
+            myName = input.value;
             
-            // Só mexe no HTML se mudar o texto, para não travar a animação
-            if (display.innerHTML !== novoConteudo) {
-                display.innerHTML = novoConteudo;
-                console.log("Salves atualizados!");
-            }
+            document.getElementById('login-area').style.display = 'none';
+            document.getElementById('msg-area').style.display = 'block';
+
+            // Inicializa o Peer
+            peer = new Peer(); 
+
+            peer.on('open', (id) => {
+                console.log("Meu ID Peer:", id);
+                // No P2P puro, tentamos conectar a um ID fixo ou lista de ativos
+                // Aqui simulamos a entrada na rede
+                adicionarMensagem("Você", "entrou no chat!");
+            });
+
+            peer.on('connection', (conn) => {
+                configurarConexao(conn);
+            });
         }
-    } catch (e) { 
-        console.error("Falha ao buscar dados:", e); 
-    }
-}
 
-// Verifica a cada 3 segundos
-setInterval(carregarSalves, 3000);
-carregarSalves();
+        function configurarConexao(conn) {
+            conn.on('open', () => {
+                connections.push(conn);
+                atualizarContador();
+            });
+            conn.on('data', (data) => {
+                adicionarMensagem(data.user, data.msg);
+            });
+        }
 
-// --- LISTA DE RÁDIOS ---
-const minhasRadios = [
+        function enviarMensagem() {
+            const input = document.getElementById('chatInput');
+            const texto = input.value;
+            if(!texto) return;
+
+            adicionarMensagem("Você", texto);
+            
+            // Envia para todos os conectados
+            connections.forEach(conn => {
+                if(conn.open) conn.send({ user: myName, msg: texto });
+            });
+            input.value = "";
+        }
+
+        function adicionarMensagem(user, msg) {
+            const box = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.innerHTML = `<b>${user}</b> ${msg}`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function atualizarContador() {
+            document.getElementById('peer-count').innerText = connections.length + 1;
+        }
+
+        // --- SISTEMA DE SALVES ---
+        async function carregarSalves() {
+            try {
+                const response = await fetch(URL_SALVES, { cache: "no-cache" });
+                const dados = await response.json();
+                const display = document.getElementById('marqueeSalves');
+                let listaNomes = Array.isArray(dados) ? dados : Object.values(dados).flat();
+
+                if (listaNomes.length > 0) {
+                    const novoConteudo = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
+                    if (display.innerHTML !== novoConteudo) display.innerHTML = novoConteudo;
+                }
+            } catch (e) { console.error("Erro nos salves"); }
+        }
+        setInterval(carregarSalves, 3000);
+        carregarSalves();
+
+        // --- RADIOS ---
+       const minhasRadios = [
             { name: "Jovem Pan", url: "https://streaming.ntelecom.com.br:7524/stream" },
             { name: "Jovem Pan FM", url: "https://radio02.zas.media/proxy/jovempanitajai/stream" },
             { name: "Jovem Pan MPB", url: "https://stream.zeno.fm/mcypvxlpz4ouv" },
@@ -278,37 +255,36 @@ const minhasRadios = [
             { name: "Radio ONE Brasil", url: "https://streaming.conecta-la.com/radio-one-brasil.mp3" }
         ];
 
-function renderList() {
-    const list = document.getElementById('radioList');
-    minhasRadios.forEach((radio) => {
-        const li = document.createElement('li');
-        li.className = 'radio-item';
-        li.innerHTML = `<div class="radio-icon">${radio.name[0]}</div><div><b>${radio.name}</b><br><small>AO VIVO</small></div>`;
-        li.onclick = () => playRadio(radio, li);
-        list.appendChild(li);
-    });
-}
+        function renderList() {
+            const list = document.getElementById('radioList');
+            minhasRadios.forEach((radio) => {
+                const li = document.createElement('li');
+                li.className = 'radio-item';
+                li.innerHTML = `<div class="radio-icon">${radio.name[0]}</div><div><b>${radio.name}</b><br><small>AO VIVO</small></div>`;
+                li.onclick = () => playRadio(radio, li);
+                list.appendChild(li);
+            });
+        }
 
-function playRadio(radio, li) {
-    document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('active'));
-    li.classList.add('active');
-    const playerMain = document.getElementById('playerMain');
-    playerMain.classList.remove('playing');
-    document.getElementById('current-name').textContent = radio.name;
-    document.getElementById('current-status').textContent = "CONECTANDO...";
-    
-    audioPlayer.src = radio.url;
-    audioPlayer.play().then(() => {
-        document.getElementById('current-status').textContent = "• TOCANDO AGORA";
-        document.getElementById('art').textContent = "💿";
-        playerMain.classList.add('playing');
-    }).catch(() => {
-        document.getElementById('current-status').textContent = "OFFLINE";
-        document.getElementById('art').textContent = "❌";
-    });
-}
+        function playRadio(radio, li) {
+            document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('active'));
+            li.classList.add('active');
+            const playerMain = document.getElementById('playerMain');
+            playerMain.classList.remove('playing');
+            document.getElementById('current-name').textContent = radio.name;
+            document.getElementById('current-status').textContent = "CONECTANDO...";
+            audioPlayer.src = radio.url;
+            audioPlayer.play().then(() => {
+                document.getElementById('current-status').textContent = "• NO AR";
+                document.getElementById('art').textContent = "💿";
+                playerMain.classList.add('playing');
+            }).catch(() => {
+                document.getElementById('current-status').textContent = "OFFLINE";
+                document.getElementById('art').textContent = "❌";
+            });
+        }
 
-renderList();
+        renderList();
     </script>
 </body>
 </html>
