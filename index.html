@@ -9,7 +9,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar */
+        /* Sidebar Esquerda (Rádios) */
         .sidebar { width: 320px; background-color: #000; display: flex; flex-direction: column; border-right: 1px solid #282828; }
         .header-list { padding: 20px; border-bottom: 1px solid #282828; text-align: center; }
         .header-list h2 { font-size: 1.2rem; color: var(--primary); }
@@ -21,7 +21,7 @@
         
         .radio-icon { width: 45px; height: 45px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: black; font-weight: bold; }
 
-        /* Main Player */
+        /* Main Player (Centro) */
         .main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle, #1e1e1e 0%, #000 100%); }
         .player-display { text-align: center; width: 90%; max-width: 400px; }
         
@@ -31,6 +31,21 @@
         p#current-status { color: var(--primary); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; margin-bottom: 20px; }
         
         audio { width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(1.5); }
+
+        /* Sidebar Direita (Painel de Recados) */
+        .messages-panel { width: 320px; background-color: #000; border-left: 1px solid #282828; display: flex; flex-direction: column; }
+        .messages-header { padding: 20px; text-align: center; border-bottom: 1px solid #282828; }
+        .messages-header h2 { font-size: 1.2rem; color: var(--primary); }
+        
+        .messages-list { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .message-box { background: #181818; padding: 12px; border-radius: 8px; font-size: 0.9rem; border-left: 4px solid var(--primary); word-wrap: break-word; }
+        .message-author { font-weight: bold; color: var(--primary); margin-bottom: 5px; font-size: 0.85rem; text-transform: uppercase; }
+        
+        .message-form { padding: 15px; border-top: 1px solid #282828; background: #0a0a0a; display: flex; flex-direction: column; gap: 10px; }
+        .message-input { background: #1e1e1e; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 5px; font-size: 0.9rem; outline: none; resize: none; }
+        .message-input:focus { border-color: var(--primary); }
+        .message-btn { background: var(--primary); color: #000; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .message-btn:hover { background: #1ed760; transform: scale(1.02); }
     </style>
 </head>
 <body>
@@ -41,7 +56,7 @@
             <small style="color: #888;">Lista Personalizada</small>
         </div>
         <ul class="radio-list" id="radioList">
-            </ul>
+        </ul>
     </aside>
 
     <main class="main">
@@ -53,6 +68,26 @@
         </div>
     </main>
 
+    <aside class="messages-panel">
+        <div class="messages-header">
+            <h2>Mural da Rádio</h2>
+            <small style="color: #888;">Mande seu abraço!</small>
+        </div>
+        
+        <div class="messages-list" id="messagesList">
+            <div class="message-box">
+                <div class="message-author">Locutor</div>
+                <div>Fala galera! Deixem seus recados, pedidos de músicas ou anúncios aqui embaixo! 🎶</div>
+            </div>
+        </div>
+
+        <form class="message-form" id="messageForm">
+            <input type="text" id="msgName" class="message-input" placeholder="Seu Nome / Apelido" required autocomplete="off">
+            <textarea id="msgText" class="message-input" rows="3" placeholder="Escreva seu recado ou pedido..." required></textarea>
+            <button type="submit" class="message-btn">Enviar Recado</button>
+        </form>
+    </aside>
+
     <script>
         // SUA LISTA DE RÁDIOS
         const minhasRadios = [
@@ -63,7 +98,7 @@
             { name: "Radio Top Brasil", url: "https://s4.guaracast.com:48030/stream" },
             { name: "Byte Brasil", url: "https://stm8.srvvox.com.br:7428/stream" },
             { name: "BOB FM BRASIL", url: "https://stream1.svrdedicado.org/8134/stream" },
-            { name: "Dance Classics Brasil", url: "http://play.radios.com.br/16460" }, // Ajustado para stream direto
+            { name: "Dance Classics Brasil", url: "http://play.radios.com.br/16460" }, 
             { name: "Rádio MIX FM", url: "https://playerservices.streamtheworld.com/api/livestream-redirect/MIXFM_POA.MP3" },
             { name: "Rádio Clube de Blumenau", url: "https://paineldj5.com.br:20061/stream" },
             { name: "Radio Gospel", url: "https://stream3.svrdedicado.org/8152/stream" },
@@ -82,12 +117,18 @@
             { name: "Radio ONE Brasil", url: "https://streaming.conecta-la.com/radio-one-brasil.mp3" }
         ];
 
+        // VARIÁVEIS DO PLAYER
         const audioPlayer = document.getElementById('audioPlayer');
         const radioList = document.getElementById('radioList');
         const currentName = document.getElementById('current-name');
         const currentStatus = document.getElementById('current-status');
         const art = document.getElementById('art');
 
+        // VARIÁVEIS DOS RECADOS
+        const messageForm = document.getElementById('messageForm');
+        const messagesList = document.getElementById('messagesList');
+
+        // FUNÇÃO DE RENDERIZAR RÁDIOS
         function renderList() {
             minhasRadios.forEach((radio, index) => {
                 const li = document.createElement('li');
@@ -107,12 +148,11 @@
             });
         }
 
+        // FUNÇÃO DE TOCAR RÁDIO
         function playRadio(radio, element) {
-            // Reset visual
             document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('active'));
             element.classList.add('active');
 
-            // Atualiza Player
             currentName.textContent = radio.name;
             currentStatus.textContent = "Conectando...";
             art.textContent = "📡";
@@ -130,7 +170,35 @@
                 });
         }
 
-        // Iniciar a lista
+        // FUNÇÃO DE ENVIAR RECADO
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Impede a página de recarregar
+            
+            const name = document.getElementById('msgName').value;
+            const text = document.getElementById('msgText').value;
+
+            // Cria o elemento da nova mensagem
+            const msgBox = document.createElement('div');
+            msgBox.className = 'message-box';
+            
+            // Tratamento simples para não quebrar o layout (escapa HTML básico)
+            const safeName = name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            msgBox.innerHTML = `
+                <div class="message-author">${safeName}</div>
+                <div>${safeText}</div>
+            `;
+
+            // Adiciona na lista e rola para baixo
+            messagesList.appendChild(msgBox);
+            messagesList.scrollTop = messagesList.scrollHeight;
+
+            // Limpa apenas o campo de texto (mantém o nome da pessoa pra facilitar)
+            document.getElementById('msgText').value = '';
+        });
+
+        // Iniciar a lista de rádios
         renderList();
     </script>
 </body>
