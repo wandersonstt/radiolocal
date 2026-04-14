@@ -9,7 +9,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* --- ESTILO DO LETREIRO (SALVES) --- */
+        /* --- ESTILO DO LETREIRO AJUSTADO --- */
         .marquee-wrapper {
             background: #000;
             border-bottom: 2px solid var(--primary);
@@ -21,8 +21,10 @@
 
         .marquee-content {
             display: inline-block;
-            padding-left: 100%;
-            animation: scroll-left 30s linear infinite;
+            /* Faz o texto começar totalmente fora da tela à direita */
+            padding-left: 100%; 
+            /* Ajuste o tempo (20s) para aumentar ou diminuir a velocidade */
+            animation: scroll-left 20s linear infinite;
             font-weight: bold;
             color: var(--primary);
             text-transform: uppercase;
@@ -32,14 +34,15 @@
 
         @keyframes scroll-left {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
+            /* Move o texto até que o final dele saia totalmente pela esquerda */
+            100% { transform: translateX(-100%); } 
         }
 
         .salve-tag {
             background: rgba(29, 185, 84, 0.1);
             padding: 4px 15px;
             border-radius: 20px;
-            margin-right: 50px;
+            margin-right: 30px;
             border: 1px solid var(--primary);
             display: inline-block;
         }
@@ -97,53 +100,36 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DOS SALVES (GITHUB)
         const URL_SALVES = "https://raw.githubusercontent.com/wandersonstt/radiolocal/refs/heads/main/salves.txt";
 
         async function carregarSalves() {
             try {
-                // O t= garante que o GitHub não entregue uma versão velha do arquivo
                 const cacheBuster = `?t=${Date.now()}`;
                 const response = await fetch(URL_SALVES + cacheBuster);
                 
-                if (!response.ok) throw new Error("Falha ao buscar arquivo");
+                if (!response.ok) throw new Error("Erro ao buscar");
                 
                 const data = await response.text();
-                
-                // Limpa os nomes e remove linhas vazias
                 const listaNomes = data.split('\n')
                                       .map(n => n.trim())
                                       .filter(n => n !== "");
                 
                 if (listaNomes.length > 0) {
                     const display = document.getElementById('marqueeSalves');
-                    
-                    // Criamos as tags de salve
                     const htmlSalves = listaNomes.map(nome => `<span class="salve-tag">📢 SALVE: ${nome}</span>`).join("");
                     
-                    // ESPAÇO INTELIGENTE:
-                    // Se houver poucos nomes, adicionamos um espaço bem grande (vários &nbsp;)
-                    // para que o próximo nome demore a aparecer, ficando elegante.
-                    const separador = "&nbsp;".repeat(80); 
-                    
-                    display.innerHTML = htmlSalves + separador + htmlSalves + separador;
-                    
-                    // Garante que a animação está ativa
-                    display.style.animation = "scroll-left 25s linear infinite";
+                    // Atualiza o conteúdo sem duplicar. O CSS cuida do espaço de reinicialização.
+                    display.innerHTML = htmlSalves;
                 }
             } catch (error) {
-                console.warn("GitHub ainda processando alteração...");
+                console.warn("GitHub sincronizando...");
             }
         }
 
-        // 1. Carrega assim que a página abre
         carregarSalves();
+        // Verifica atualizações a cada 10 segundos (ideal para não travar o navegador)
+        setInterval(carregarSalves, 10000);
 
-        // 2. Verifica se você mudou o arquivo no GitHub a cada 1 segundos
-        // Não precisa dar F5, ele troca o texto sozinho na tela!
-        setInterval(carregarSalves, 100);
-
-        // SUA LISTA DE RÁDIOS ORIGINAL
         const minhasRadios = [
             { name: "Jovem Pan", url: "https://streaming.ntelecom.com.br:7524/stream" },
             { name: "Jovem Pan FM", url: "https://radio02.zas.media/proxy/jovempanitajai/stream" },
