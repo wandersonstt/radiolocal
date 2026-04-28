@@ -32,7 +32,7 @@
         ::-webkit-scrollbar-thumb { background: #252525; border-radius: 10px; transition: 0.3s; }
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        /* --- MODAL DE ENTRADA (NOVO) --- */
+        /* --- MODAL DE ENTRADA --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
@@ -69,13 +69,17 @@
         /* --- LETREIRO --- */
         .marquee-wrapper {
             background: #000; border-bottom: 2px solid var(--primary); padding: 10px 0; 
-            overflow: hidden; white-space: nowrap; flex-shrink: 0;
+            overflow: hidden; white-space: nowrap; flex-shrink: 0; position: relative;
         }
         .marquee-content {
-            display: inline-block; padding-left: 100%; animation: scroll-left 20s linear infinite;
+            display: inline-block; padding-left: 100%; 
+            animation: scroll-left 25s linear infinite;
             font-weight: 800; color: var(--primary); text-transform: uppercase; font-size: 0.8rem;
         }
-        @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        @keyframes scroll-left { 
+            0% { transform: translateX(0); } 
+            100% { transform: translateX(-100%); } 
+        }
 
         /* Estilo especial para quem acabou de entrar */
         .destaque-entrada {
@@ -83,6 +87,7 @@
             background: linear-gradient(45deg, #ff007f, #7928ca) !important;
             border: none !important;
             box-shadow: 0 0 15px rgba(255,0,127,0.5);
+            display: inline-block;
         }
 
         /* --- LAYOUT PRINCIPAL --- */
@@ -215,7 +220,7 @@
         const db = firebase.database();
         const chatRef = db.ref("mensagens");
         const conexoesRef = db.ref("conexoes");
-        const entradasRef = db.ref("entradas_recente"); // Novo nó para o letreiro
+        const entradasRef = db.ref("entradas_recente"); 
 
         // CONTADOR DE USUÁRIOS
         const meuStatusRef = conexoesRef.push(); 
@@ -254,10 +259,9 @@
             volValue.textContent = val + "%";
         });
 
-        // --- LÓGICA DE ENTRADA DO USUÁRIO ---
+        // --- LÓGICA DE ENTRADA E CHAT ---
         let meuNome = "";
         
-        // Enter no input do Modal
         document.getElementById('modalUserName').addEventListener('keypress', (e) => {
             if(e.key === 'Enter') entrarNoChat();
         });
@@ -269,24 +273,23 @@
             
             meuNome = nome;
             
-            // Some com a janela
             document.getElementById('welcomeModal').style.display = 'none';
-            // Mostra a área de digitar mensagem
             document.getElementById('msg-area').style.display = 'block';
             
-            // Manda mensagem pro chat
             enviarSistema(`🚀 O brabo(a) ${meuNome} acabou de colar na live!`);
             
-            // Dispara para o letreiro de TODO MUNDO
-            entradasRef.push({ nome: meuNome, timestamp: Date.now() });
+            // Dispara para o Firebase com o Timestamp real do servidor
+            entradasRef.push({ 
+                nome: meuNome, 
+                timestamp: firebase.database.ServerValue.TIMESTAMP 
+            });
         }
 
-        // --- LÓGICA DO CHAT ---
         function enviarMensagem() {
             const input = document.getElementById('chatInput');
             const texto = input.value.trim();
             if(!texto) return;
-            chatRef.push({ usuario: meuNome, texto: texto, timestamp: Date.now() });
+            chatRef.push({ usuario: meuNome, texto: texto, timestamp: firebase.database.ServerValue.TIMESTAMP });
             input.value = "";
         }
 
@@ -295,7 +298,7 @@
         });
 
         function enviarSistema(txt) {
-            chatRef.push({ usuario: "SISTEMA", texto: txt, timestamp: Date.now() });
+            chatRef.push({ usuario: "SISTEMA", texto: txt, timestamp: firebase.database.ServerValue.TIMESTAMP });
         }
 
         chatRef.limitToLast(30).on("child_added", (snapshot) => {
@@ -314,48 +317,57 @@
             box.scrollTop = box.scrollHeight;
         });
 
-        // --- SISTEMA DE LETREIRO MISTO (Salves + Recém Chegados) ---
+        // --- SISTEMA DE LETREIRO BLINDADO ---
         let salvesAPI = [];
         let recemChegados = [];
+        let htmlLetreiroAnterior = "";
 
         function atualizarLetreiro() {
             const display = document.getElementById('marqueeSalves');
-            let html = "";
+            let htmlHTML = "";
             
-            // 1. Renderiza os VIPs (Quem acabou de entrar)
+            // Renderiza VIPs
             recemChegados.forEach(nome => {
-                html += `<span class="destaque-entrada" style="margin-right:60px; padding:4px 18px; border-radius:50px;">🔥 BEM-VINDO(A) ${nome} 🔥</span>`;
+                htmlHTML += `<span class="destaque-entrada" style="margin-right:60px; padding:4px 18px; border-radius:50px;">🔥 BEM-VINDO(A) ${nome} 🔥</span>`;
             });
 
-            // 2. Renderiza os Salves normais da API
+            // Renderiza Salves
             salvesAPI.forEach(msg => {
-                html += `<span style="margin-right:60px; border:1px solid var(--primary); padding:4px 18px; border-radius:50px; background: rgba(29,185,84,0.05)">📢 ${msg}</span>`;
+                htmlHTML += `<span style="margin-right:60px; border:1px solid var(--primary); padding:4px 18px; border-radius:50px; background: rgba(29,185,84,0.05)">📢 ${msg}</span>`;
             });
 
-            if(html === "") html = "<span>AGUARDANDO CONEXÕES...</span>";
-            display.innerHTML = html;
+            if(htmlHTML === "") htmlHTML = "<span>AGUARDANDO CONEXÕES...</span>";
+            
+            // Só mexe no letreiro se o texto realmente mudou (evita bugar a animação)
+            if (htmlHTML !== htmlLetreiroAnterior) {
+                display.innerHTML = htmlHTML;
+                htmlLetreiroAnterior = htmlHTML;
+
+                // Força o letreiro a reiniciar imediatamente pra mostrar quem acabou de entrar
+                display.style.animation = 'none';
+                void display.offsetWidth; // Mágica que força o navegador a reiniciar a animação
+                display.style.animation = 'scroll-left 25s linear infinite';
+            }
         }
 
-        // Monitora todo mundo que entra na rádio
-        entradasRef.limitToLast(10).on("child_added", (snapshot) => {
+        // Fica de olho em quem entra
+        let tempoDeCarregamento = Date.now();
+        entradasRef.limitToLast(5).on("child_added", (snapshot) => {
             const data = snapshot.val();
-            const agora = Date.now();
-            const tempoDecorrido = agora - data.timestamp;
-            
-            // Só mostra se entrou a menos de 1 minuto (60.000 ms)
-            if (tempoDecorrido < 60000) { 
+            // Ignora se for lixo antigo no banco de dados, só pega coisa de agora
+            if (data.timestamp > tempoDeCarregamento - 5000) {
                 recemChegados.push(data.nome);
                 atualizarLetreiro();
                 
-                // Programa para sumir exatamente 1 minuto depois que a pessoa entrou
+                // Exatamente 60 segundos depois, o nome some do letreiro
                 setTimeout(() => {
                     recemChegados = recemChegados.filter(n => n !== data.nome);
                     atualizarLetreiro();
-                }, 60000 - tempoDecorrido);
+                }, 60000);
             }
         });
 
-        // Carrega os Salves normais
+        // Carrega os Salves
         const URL_SALVES = "https://api.npoint.io/4fa1dfaf6285b945cffc";
         async function carregarSalves() {
             try {
