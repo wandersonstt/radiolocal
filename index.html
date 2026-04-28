@@ -74,6 +74,9 @@
         #volumeSlider { flex: 1; accent-color: var(--primary); cursor: pointer; }
 
         .online-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--primary); font-size: 0.65rem; color: var(--primary); font-weight: bold; }
+        
+        /* NOVO: Estilo do Relógio */
+        .clock-badge { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--primary); font-size: 0.65rem; color: var(--primary); font-weight: bold; display: flex; align-items: center; gap: 5px; }
 
         @media (max-width: 850px) {
             body { overflow-y: auto; height: auto; }
@@ -99,6 +102,8 @@
         </aside>
 
         <main class="main" id="playerMain">
+            <div class="clock-badge">🕒 <span id="clockDisplay">00:00:00</span></div>
+            
             <div class="online-badge">OUVINTES: <span id="peer-count">0</span></div>
             
             <div class="album-art" id="art">📻</div>
@@ -132,6 +137,15 @@
     </div>
 
     <script>
+        // --- RELÓGIO LÓGICA (NOVO) ---
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
+            document.getElementById('clockDisplay').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // Inicia o relógio imediatamente
+
         // --- CONFIGURAÇÃO FIREBASE ---
         const firebaseConfig = {
             databaseURL: "https://radio-86ca5-default-rtdb.firebaseio.com/" 
@@ -287,10 +301,6 @@
            { name: "Rádio Hunter Lofi", url: "https://live.hunter.fm/lofi_high" },
            { name: "Rádio Hunter Tropical", url: "https://live.hunter.fm/tropical_high" },
            { name: "Rádio Boa novas FM", url: "https://boasnovasaac.jmvstream.com/live" }
-         
-           
-         
-          
         ];
 
         function renderList() {
