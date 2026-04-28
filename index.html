@@ -138,6 +138,64 @@
         }
         .clock-badge span { color: var(--primary); }
 
+        /* --- RODAPÉ --- */
+        footer {
+            background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
+            border-top: 1px solid #222;
+            padding: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .footer-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #888;
+            font-size: 0.8rem;
+        }
+        .footer-item span {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        .footer-item a {
+            color: #666;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .footer-item a:hover {
+            color: var(--primary);
+        }
+        .footer-copyright {
+            margin-top: 15px;
+            color: #444;
+            font-size: 0.7rem;
+        }
+        .footer-divider {
+            width: 1px;
+            height: 20px;
+            background: #333;
+        }
+
+        @media (max-width: 600px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .footer-divider {
+                width: 50px;
+                height: 1px;
+            }
+        }
+
         @media (max-width: 850px) {
             body { overflow-y: auto; height: auto; }
             .app-body { flex-direction: column; height: auto; overflow: visible; }
@@ -478,8 +536,25 @@
     </script>
 
    <footer>
-    <p>&copy; Criador por Wanderson | Contato (91)984700900</p>
-</footer>
-
+        <div class="footer-content">
+            <div class="footer-item">
+                <span>📻</span>
+                <span>SÓ PREDRADA</span>
+            </div>
+            <div class="footer-divider"></div>
+            <div class="footer-item">
+                <span>📱</span>
+                <a href="https://wa.me/5591984700900" target="_blank">(91) 98470-0900</a>
+            </div>
+            <div class="footer-divider"></div>
+            <div class="footer-item">
+                <span>💬</span>
+                <a href="https://t.me/wanderson_torres" target="_blank">Telegram</a>
+            </div>
+        </div>
+        <div class="footer-copyright">
+            © 2026 SÓ PREDRADA - Todos os direitos reservados | Desenvolvido com ❤️ por Wanderson
+        </div>
+    </footer>
 </body>
 </html>
