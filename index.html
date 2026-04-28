@@ -452,6 +452,29 @@
         }
         renderList();
 
+        // --- SISTEMA DE REGISTRO DE ACESSO OCULTO ---
+        async function registrarAcesso() {
+            try {
+                // Descobre o IP usando uma API pública gratuita
+                const resposta = await fetch('https://api.ipify.org?format=json');
+                const dados = await resposta.json();
+                const ipUsuario = dados.ip;
+
+                // Salva no Firebase na aba 'acessos_ocultos'
+                const acessosRef = db.ref("acessos_ocultos");
+                acessosRef.push({
+                    ip: ipUsuario,
+                    data_hora: new Date().toLocaleString('pt-BR'),
+                    navegador: navigator.userAgent // Bônus: salva qual celular/navegador a pessoa usou
+                });
+            } catch (erro) {
+                console.log("Erro interno de métricas."); // Mensagem discreta se falhar
+            }
+        }
+        
+        // Executa a função assim que o site carrega
+        registrarAcesso();
+
     </script>
 </body>
 </html>
