@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SO PREDRADA </title>
+    <title>SO PREDRADA</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
@@ -26,21 +26,45 @@
             overflow: hidden; 
         }
 
-        /* --- ESTILO DA BARRA DE ROLAGEM (Scrollbar) --- */
-        ::-webkit-scrollbar {
-            width: 6px;
+        /* --- ESTILO DA BARRA DE ROLAGEM --- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #252525; border-radius: 10px; transition: 0.3s; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* --- MODAL DE ENTRADA (NOVO) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
         }
-        ::-webkit-scrollbar-track {
-            background: #000;
+        .modal-content {
+            background: #111; padding: 40px; border-radius: 20px;
+            text-align: center; border: 2px solid var(--primary);
+            box-shadow: 0 0 40px var(--primary-glow);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 400px; width: 90%;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #252525;
-            border-radius: 10px;
-            transition: 0.3s;
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary);
+        .modal-content h1 { color: #fff; margin-bottom: 10px; font-size: 2rem; }
+        .modal-content h1 span { color: var(--primary); }
+        .modal-content p { color: #aaa; margin-bottom: 25px; font-size: 0.95rem; }
+        .modal-content input {
+            width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #333;
+            background: #000; color: #fff; font-size: 1.1rem; text-align: center;
+            margin-bottom: 20px; outline: none; transition: 0.3s;
         }
+        .modal-content input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+        .modal-content button {
+            width: 100%; padding: 15px; border-radius: 10px; border: none;
+            background: var(--primary); color: #000; font-weight: bold; font-size: 1.1rem;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase;
+        }
+        .modal-content button:hover { background: #1ed760; transform: scale(1.05); }
 
         /* --- LETREIRO --- */
         .marquee-wrapper {
@@ -52,6 +76,14 @@
             font-weight: 800; color: var(--primary); text-transform: uppercase; font-size: 0.8rem;
         }
         @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        /* Estilo especial para quem acabou de entrar */
+        .destaque-entrada {
+            color: #fff !important;
+            background: linear-gradient(45deg, #ff007f, #7928ca) !important;
+            border: none !important;
+            box-shadow: 0 0 15px rgba(255,0,127,0.5);
+        }
 
         /* --- LAYOUT PRINCIPAL --- */
         .app-body { display: flex; flex: 1; overflow: hidden; }
@@ -73,6 +105,7 @@
         #chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
         .msg { background: #111; padding: 10px; border-radius: 8px; border-left: 3px solid var(--primary); word-wrap: break-word; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .msg b { color: var(--primary); font-size: 0.7rem; display: block; margin-bottom: 2px; text-transform: uppercase; }
         
         .chat-input-area { padding: 10px; background: #0a0a0a; border-top: 1px solid #222; }
@@ -89,26 +122,13 @@
         .volume-container { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 50px; width: 250px; border: 1px solid #222; }
         #volumeSlider { flex: 1; accent-color: var(--primary); cursor: pointer; }
 
-        /* Badges Superiores */
         .online-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; border: 1px solid var(--primary); font-size: 0.65rem; color: var(--primary); font-weight: bold; backdrop-filter: blur(5px); }
         
-        /* Relógio Centralizado */
         .clock-badge { 
-            position: absolute; 
-            top: 15px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            background: rgba(0,0,0,0.6); 
-            padding: 6px 16px; 
-            border-radius: 20px; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            font-size: 0.8rem; 
-            color: #fff; 
-            font-weight: 600; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            backdrop-filter: blur(5px);
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%); 
+            background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; color: #fff; 
+            font-weight: 600; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px);
             letter-spacing: 1px;
         }
         .clock-badge span { color: var(--primary); }
@@ -126,8 +146,17 @@
 </head>
 <body>
 
+    <div class="modal-overlay" id="welcomeModal">
+        <div class="modal-content">
+            <h1>SÓ <span>PEDRADA</span></h1>
+            <p>A melhor rádio online. Identifique-se para curtir com a galera!</p>
+            <input type="text" id="modalUserName" placeholder="Digite seu apelido maneiro..." autocomplete="off">
+            <button onclick="entrarNoChat()">Entrar na Vibe 🎧</button>
+        </div>
+    </div>
+
     <div class="marquee-wrapper">
-        <div class="marquee-content" id="marqueeSalves">CONECTANDO AO SISTEMA DE SALVES...</div>
+        <div class="marquee-content" id="marqueeSalves">CONECTANDO AO SISTEMA...</div>
     </div>
 
     <div class="app-body">
@@ -158,20 +187,16 @@
             <div class="header-section">CHAT DA GALERA</div>
             <div id="chat-container">
                 <div id="chat-messages"></div>
-                <div class="chat-input-area" id="login-area">
-                    <input type="text" id="userName" placeholder="Seu apelido...">
-                    <button onclick="entrarNoChat()">ENTRAR NO CHAT</button>
-                </div>
                 <div class="chat-input-area" id="msg-area" style="display:none;">
-                    <input type="text" id="chatInput" placeholder="Sua mensagem...">
-                    <button onclick="enviarMensagem()">ENVIAR</button>
+                    <input type="text" id="chatInput" placeholder="Sua mensagem..." autocomplete="off">
+                    <button onclick="enviarMensagem()">ENVIAR MENSAGEM</button>
                 </div>
             </div>
         </aside>
     </div>
 
     <script>
-        // --- RELÓGIO LÓGICA ---
+        // --- RELÓGIO ---
         function updateClock() {
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
@@ -190,7 +215,9 @@
         const db = firebase.database();
         const chatRef = db.ref("mensagens");
         const conexoesRef = db.ref("conexoes");
+        const entradasRef = db.ref("entradas_recente"); // Novo nó para o letreiro
 
+        // CONTADOR DE USUÁRIOS
         const meuStatusRef = conexoesRef.push(); 
         db.ref(".info/connected").on("value", (snapshot) => {
             if (snapshot.val() === true) {
@@ -199,10 +226,10 @@
             }
         });
         conexoesRef.on("value", (snapshot) => {
-            const totalOnline = snapshot.numChildren();
-            document.getElementById('peer-count').innerText = totalOnline;
+            document.getElementById('peer-count').innerText = snapshot.numChildren();
         });
 
+        // LIMPEZA DIÁRIA
         function verificarLimpezaDiaria() {
             const hoje = new Date().toLocaleDateString();
             const ultimaLimpeza = localStorage.getItem('last_clear');
@@ -215,6 +242,7 @@
         }
         verificarLimpezaDiaria();
 
+        // PLAYER DE ÁUDIO
         const audioPlayer = document.getElementById('audioPlayer');
         const volSlider = document.getElementById('volumeSlider');
         const volValue = document.getElementById('volValue');
@@ -226,17 +254,34 @@
             volValue.textContent = val + "%";
         });
 
+        // --- LÓGICA DE ENTRADA DO USUÁRIO ---
         let meuNome = "";
+        
+        // Enter no input do Modal
+        document.getElementById('modalUserName').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') entrarNoChat();
+        });
+
         function entrarNoChat() {
-            const nomeInput = document.getElementById('userName');
+            const nomeInput = document.getElementById('modalUserName');
             const nome = nomeInput.value.trim();
-            if(!nome) return alert("Digite um apelido!");
+            if(!nome) return alert("Ei! Digite um apelido para entrar.");
+            
             meuNome = nome;
-            document.getElementById('login-area').style.display = 'none';
+            
+            // Some com a janela
+            document.getElementById('welcomeModal').style.display = 'none';
+            // Mostra a área de digitar mensagem
             document.getElementById('msg-area').style.display = 'block';
-            enviarSistema(meuNome + " entrou na live! 🎧");
+            
+            // Manda mensagem pro chat
+            enviarSistema(`🚀 O brabo(a) ${meuNome} acabou de colar na live!`);
+            
+            // Dispara para o letreiro de TODO MUNDO
+            entradasRef.push({ nome: meuNome, timestamp: Date.now() });
         }
 
+        // --- LÓGICA DO CHAT ---
         function enviarMensagem() {
             const input = document.getElementById('chatInput');
             const texto = input.value.trim();
@@ -244,6 +289,10 @@
             chatRef.push({ usuario: meuNome, texto: texto, timestamp: Date.now() });
             input.value = "";
         }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') enviarMensagem();
+        });
 
         function enviarSistema(txt) {
             chatRef.push({ usuario: "SISTEMA", texto: txt, timestamp: Date.now() });
@@ -265,24 +314,61 @@
             box.scrollTop = box.scrollHeight;
         });
 
-        document.getElementById('userName').addEventListener('keypress', (e) => e.key === 'Enter' && entrarNoChat());
-        document.getElementById('chatInput').addEventListener('keypress', (e) => e.key === 'Enter' && enviarMensagem());
+        // --- SISTEMA DE LETREIRO MISTO (Salves + Recém Chegados) ---
+        let salvesAPI = [];
+        let recemChegados = [];
 
+        function atualizarLetreiro() {
+            const display = document.getElementById('marqueeSalves');
+            let html = "";
+            
+            // 1. Renderiza os VIPs (Quem acabou de entrar)
+            recemChegados.forEach(nome => {
+                html += `<span class="destaque-entrada" style="margin-right:60px; padding:4px 18px; border-radius:50px;">🔥 BEM-VINDO(A) ${nome} 🔥</span>`;
+            });
+
+            // 2. Renderiza os Salves normais da API
+            salvesAPI.forEach(msg => {
+                html += `<span style="margin-right:60px; border:1px solid var(--primary); padding:4px 18px; border-radius:50px; background: rgba(29,185,84,0.05)">📢 ${msg}</span>`;
+            });
+
+            if(html === "") html = "<span>AGUARDANDO CONEXÕES...</span>";
+            display.innerHTML = html;
+        }
+
+        // Monitora todo mundo que entra na rádio
+        entradasRef.limitToLast(10).on("child_added", (snapshot) => {
+            const data = snapshot.val();
+            const agora = Date.now();
+            const tempoDecorrido = agora - data.timestamp;
+            
+            // Só mostra se entrou a menos de 1 minuto (60.000 ms)
+            if (tempoDecorrido < 60000) { 
+                recemChegados.push(data.nome);
+                atualizarLetreiro();
+                
+                // Programa para sumir exatamente 1 minuto depois que a pessoa entrou
+                setTimeout(() => {
+                    recemChegados = recemChegados.filter(n => n !== data.nome);
+                    atualizarLetreiro();
+                }, 60000 - tempoDecorrido);
+            }
+        });
+
+        // Carrega os Salves normais
         const URL_SALVES = "https://api.npoint.io/4fa1dfaf6285b945cffc";
         async function carregarSalves() {
             try {
                 const response = await fetch(URL_SALVES, { cache: "no-cache" });
                 const dados = await response.json();
-                const display = document.getElementById('marqueeSalves');
-                let lista = Array.isArray(dados) ? dados : Object.values(dados).flat();
-                if (lista.length > 0) {
-                    display.innerHTML = lista.map(n => `<span style="margin-right:60px; border:1px solid var(--primary); padding:4px 18px; border-radius:50px; background: rgba(29,185,84,0.05)">📢 ${n}</span>`).join("");
-                }
+                salvesAPI = Array.isArray(dados) ? dados : Object.values(dados).flat();
+                atualizarLetreiro();
             } catch (e) { console.error("Erro nos salves"); }
         }
         setInterval(carregarSalves, 15000);
         carregarSalves();
 
+        // --- LISTA DE RÁDIOS ---
        const minhasRadios = [
             { name: "Rádio Local", url: "https://uk14freenew.listen2myradio.com/live.mp3?typeportmount=s1_28174_stream_9459917" },
             { name: "Jovem Pan", url: "https://streaming.ntelecom.com.br:7524/stream" },
@@ -353,29 +439,6 @@
             });
         }
         renderList();
-
-        // --- SISTEMA DE REGISTRO DE ACESSO OCULTO ---
-        async function registrarAcesso() {
-            try {
-                // Descobre o IP usando uma API pública gratuita
-                const resposta = await fetch('https://api.ipify.org?format=json');
-                const dados = await resposta.json();
-                const ipUsuario = dados.ip;
-
-                // Salva no Firebase na aba 'acessos_ocultos'
-                const acessosRef = db.ref("acessos_ocultos");
-                acessosRef.push({
-                    ip: ipUsuario,
-                    data_hora: new Date().toLocaleString('pt-BR'),
-                    navegador: navigator.userAgent // Salva qual celular/navegador a pessoa usou
-                });
-            } catch (erro) {
-                console.log("Erro interno de métricas."); // Mensagem discreta se falhar
-            }
-        }
-        
-        // Executa a função assim que o site carrega
-        registrarAcesso();
 
     </script>
 </body>
